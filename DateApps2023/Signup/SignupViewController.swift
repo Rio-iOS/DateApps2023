@@ -8,7 +8,12 @@
 import Foundation
 import UIKit
 import FirebaseAuth
+import FirebaseFirestore
 
+/*
+ 参考URL: https://firebase.google.com/docs/rules/basics?authuser=0&hl=ja
+ 参考URL: https://cloud.google.com/firestore/docs/manage-data/add-data?hl=ja
+ */
 class SignupViewController: UIViewController {
     
     @IBOutlet weak var usernameLabel: UILabel!
@@ -35,10 +40,12 @@ class SignupViewController: UIViewController {
     /*
      TODO: リファクタリング時に、ViewModelに切り出す
      */
-    private func validateUsername() -> Bool {
+    private func validateUsername(username: String?) -> Bool {
         let USERNAME_MIN_LENGTH = 1
         
-        if usernameTextField.text?.count ?? 0 < USERNAME_MIN_LENGTH {
+        guard let username = username else { return false }
+        
+        if username.count < USERNAME_MIN_LENGTH {
             return false
         }
         
@@ -77,30 +84,47 @@ class SignupViewController: UIViewController {
      
         return true
     }
-    
+   
+    /*
+     TODO: リファクタリング時に、ユーザー登録（FirebaseAuth）、ユーザー登録（Firestore）、画面遷移を各々のメソッドに切り出す
+     */
     @IBAction func tapSignupButton(_ sender: Any) {
+        let username = usernameTextField.text
         let email = emailTextField.text
         let password = passwordTextField.text
         let confirmPassword = confirmPasswordTextField.text
         
-        if validateUsername()
+        if validateUsername(username: username)
         && validateEmail(email: email)
         && validatePassword(password: password, confirmPassword: confirmPassword) {
             print("sign up")
-            
+            // FireAuthへの登録
             Auth.auth().createUser(withEmail: email!, password: password!) { authDataResult, error in
                 if let error = error {
                     print(error)
                 } else {
-                    let storyboard: UIStoryboard = UIStoryboard(name: "Home", bundle: nil)
-                    if let homeVC = storyboard.instantiateViewController(withIdentifier: "home") as? HomeViewController {
-                        self.navigationController?.pushViewController(homeVC, animated: true)
+                    let user = User(id: authDataResult!.user.uid, name: username!)
+                    let now = Date()
+                    
+                    // Firestoreへの登録
+                    let db = Firestore.firestore()
+                    db.collection("users").document(user.id).setData([
+                            "name": user.name,
+                            "created_at": Timestamp(date: now),
+                            "updated_at": Timestamp(date: now)
+                        ]) { error in
+                        if let error = error {
+                            print(error)
+                        } else {
+                            // 画面遷移
+                            let storyboard: UIStoryboard = UIStoryboard(name: "Home", bundle: nil)
+                            if let homeVC = storyboard.instantiateViewController(withIdentifier: "home") as? HomeViewController {
+                                self.navigationController?.pushViewController(homeVC, animated: true)
+                            }
+                        }
                     }
                 }
             }
-            
         }
     }
-    
-    
 }
