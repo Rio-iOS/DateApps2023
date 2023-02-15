@@ -15,6 +15,7 @@ class ViewController: UIViewController {
 
     
     @IBOutlet weak var signupButton: UIButton!
+    @IBOutlet weak var loginButton: UIButton!
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -24,12 +25,21 @@ class ViewController: UIViewController {
 
     private func configureUI() {
         signupButton.layer.cornerRadius = 20
+        loginButton.layer.cornerRadius = 20
     }
 
     @IBAction func tapSignupButton(_ sender: Any) {
         let storyboard: UIStoryboard = UIStoryboard(name: "Signup", bundle: nil)
         
         if let signupVC = storyboard.instantiateViewController(withIdentifier: "signup") as? SignupViewController {
+            navigationController?.pushViewController(signupVC, animated: true)
+        }
+    }
+    
+    @IBAction func tapLoginButton(_ sender: Any) {
+        let storyboard: UIStoryboard = UIStoryboard(name: "Login", bundle: nil)
+        
+        if let signupVC = storyboard.instantiateViewController(withIdentifier: "login") as? LoginViewController {
             navigationController?.pushViewController(signupVC, animated: true)
         }
     }
